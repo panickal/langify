@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Playlister</title>
+    <link rel="stylesheet" href="sp://import/css/adam.css">
+    <link rel="stylesheet" href="styles.css">
+    <script type="text/javascript" src="jquery.min.js"></script>
+</head>
+
+<body>
+    <h2 id='title'> Here's a cool playlist based upon what is now playing!</h2>
+    <div id="info"> </div>
+    <button id="new" onclick="makePlaylistFromNowPlaying()"> Generate Playlist </button>
+    <div id='all-results'>
+        <ul id="results"> </ul>
+    </div>
+</body>
+
+<script type="text/javascript">
+
+sp = getSpotifyApi(1);
+jQuery.ajaxSettings.traditional = true;  
+
+
+function makePlaylistFromNowPlaying() {
+    var playerTrackInfo = sp.trackPlayer.getNowPlayingTrack();
+    console.log(playerTrackInfo);
+
+    if (playerTrackInfo == null) {
+        info("Start playing something and I'll make a playlist of good songs based on that song");
+    } else {
+        var track = playerTrackInfo.track;
+        var artist = track.artists[0].name;
+        fetchPlaylist(artist, track.name, 25);
+    }
+}
+
+function checkLanguage(track, language)
+{
+    var url = 'http://www.google.co.uk/search?q=site:raaga.com/channels/';
+    url = url + language;
+
+    var newurl = url + '+' + track.slice(0,15);
+    console.log(newurl);
+    var size = 0;
+
+    $.ajax({ url: newurl , async: false, beforeSend: function(request)
+        {
+            request.setRequestHeader("User-Agent","Mozilla");
+        }
+    }).done(function ( data )
+    {
+        if( console && console.log ) 
+        {
+            console.log("Sample of data:", data.slice(0, 100));
+            console.log(data.length);
+            noMatch = data.toLowerCase().match("suggestions");
+            if (noMatch == null)
+                size = data.length;
+        }
+    });
+    return size;
+}
+
+function fetchPlaylist(artist, track, size) {
+
+    info('Getting language for ' + track );
+
+    var sizeHindi = checkLanguage(track, 'hindi');
+    var sizeTamil = checkLanguage(track, 'tamil');
+    var sizeMalayalam = checkLanguage(track, 'malayalam');
+    
+    var language;
+
+    if (sizeHindi + sizeTamil + sizeMalayalam == 0)
+    {
+        language = 'Not Hindi, Tamil, or Malayalam!';
+    }
+    else
+    {
+        if (sizeHindi > sizeTamil)
+        {
+            if (sizeHindi > sizeMalayalam)
+                language = 'Hindi!';
+            else
+                language = 'Malayalam!';
+        }
+        else
+        {
+            if (sizeTamil > sizeMalayalam)
+                language = 'Tamil!';
+            else
+                language = 'Malayalam!';            
+        }
+    }
+
+    info(language);
+
+    /*if (noMatch == null)
+    {
+        info("Hindi!");
+    }
+    else
+    {
+        var noMatch = checkLanguage(track, 'tamil');
+        if (noMatch == null)
+        {
+            info("Tamil!");
+        }   
+        else
+        {
+            var noMatch = checkLanguage(track, 'malayalam');
+            if (noMatch == null)
+            {
+                info("Malayalam!");
+            }
+            else
+            {
+                info("Not Hindi, Tamil, or Malayalam!");
+            }
+        }
+    }*/
+    
+
+    //var url = 'http://developer.echonest.com/api/v4/playlist/basic?api_key=N6E4NIOVYMTHNDM8J&callback=?';
+    /*
+    $.getJSON(url, { 'artist': artist, 'format':'jsonp', 
+            'results': size, 'type':'artist-radio'}, function(data) {
+        if (checkResponse(data)) {
+            $("#results").empty();
+            info("");
+            var curTracks = []
+            for (var i = 0; i < data.response.songs.length; i++) {
+                var song = data.response.songs[i];
+                var song_name = song.title + " by " + song.artist_name;
+                var li = $("<li>").text(song_name);
+                $("#results").append(li);
+            }
+        } else {
+            info("trouble getting results");
+        }
+        
+    });
+    */
+    /*$.ajax(url, function(data) {
+        if (checkResponse(data)) {
+            $("#results").empty();
+            info("");            
+        } else {
+            info("trouble getting results");
+        }
+        
+    });*/  
+}
+
+function info(s) {
+    $("#info").text(s);
+}
+
+function error(s) {
+    info(s);
+}
+
+function checkResponse(data) {
+    if (data.response) {
+        if (data.response.status.code != 0) {
+            error("Whoops... Unexpected error from server. " + data.response.status.message);
+            log(JSON.stringify(data.response));
+        } else {
+            return true;
+        }
+    } else {
+        error("Unexpected response from server");
+    }
+    return false;
+}
+
+$(document).ready(function() {
+    makePlaylistFromNowPlaying();
+});
+
+</script>
+</html>
