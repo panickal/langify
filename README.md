@@ -1,4 +1,4 @@
 Langify
 =======
 
-Spotify Language App
+Spotify Language App for Indian Languages
